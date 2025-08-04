@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>كتيب تالا الصغيرة - دليل النمو والتطور (محمي)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- نظام الحماية المتقدم -->
+    <script>
+        // إعدادات الحماية - يمكن تخصيصها لكل عميل
+        const PROTECTION_CONFIG = {
+            customerName: "هاجر القحطاني", // اسم المشتري
+            customerPhone: "050-123-4567", // رقم الهاتف
+            orderNumber: "#ORD-2024-001", // رقم الطلب
+            purchaseDate: "15 ديسمبر 2024", // تاريخ الشراء
+            maxUsage: 50, // عدد مرات الاستخدام المسموح
+            expiryDays: 365, // صالح لمدة سنة
+            isDemo: false // false للنسخة المدفوعة، true للتجريبية
+        };
+
+        // فحص الحماية عند تحميل الصفحة
+        function initProtection() {
+            // إنشاء بصمة الجهاز
+            const deviceFingerprint = generateDeviceFingerprint();
+            
+            // فحص إذا كان جهاز مصرح
+            const authorizedDevice = localStorage.getItem('authorizedDevice_' + PROTECTION_CONFIG.orderNumber);
+            if (!authorizedDevice) {
+                // أول استخدام - حفظ بصمة الجهاز
+                localStorage.setItem('authorizedDevice_' + PROTECTION_CONFIG.orderNumber, deviceFingerprint);
+                localStorage.setItem('firstUse_' + PROTECTION_CONFIG.orderNumber, new Date().getTime());
+                localStorage.setItem('usageCount_' + PROTECTION_CONFIG.orderNumber, '1');
+            } else if (authorizedDevice !== deviceFingerprint) {
+                // جهاز غير مصرح
+                showUnauthorizedAccess();
+                return false;
+            }
+
+            // فحص عدد مرات الاستخدام
+            let usageCount = parseInt(localStorage.getItem('usageCount_' + PROTECTION_CONFIG.orderNumber) || '0');
+            if (usageCount >= PROTECTION_CONFIG.maxUsage) {
+                showUsageLimitExceeded();
+                return false;
+            }
+
+            // فحص انتهاء الصلاحية
+            const firstUse = new Date(parseInt(localStorage.getItem('firstUse_' + PROTECTION_CONFIG.orderNumber)));
+            const daysPassed = Math.floor((new Date() - firstUse) / (1000 * 60 * 60 * 24));
+            if (daysPassed > PROTECTION_CONFIG.expiryDays) {
+                showExpiredContent();
+                return false;
+            }
+
+            // تحديث عداد الاستخدام
+            localStorage.setItem('usageCount_' + PROTECTION_CONFIG.orderNumber, (usageCount + 1).toString());
+            
+            // إضافة العلامة المائية
+            addWatermark();
+            
+            return true;
+        }
+
+        // إنشاء بصمة فريدة للجهاز
+        function generateDeviceFingerprint() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.textBaseline = 'top';
+            ctx.font = '14px Arial';
+            ctx.fillText('Device fingerprint', 2, 2);
+            
+            return btoa(
+                navigator.userAgent + 
+                screen.width + screen.height + 
+                new Date().getTimezoneOffset() +
+                canvas.toDataURL()
+            ).substring(0, 32);
+        }
+
+        // إضافة العلامة المائية
+        function addWatermark() {
+            const watermark = document.createElement('div');
+            watermark.innerHTML = `
+                <div style="
+                    position: fixed;
+                    top: 20px;
+                    left: 20px;
+                    background: rgba(0,0,0,0.05);
+                    padding: 8px 12px;
+                    border-radius: 8px;
+                    font-size: 11px;
+                    color: rgba(0,0,0,0.4);
+                    z-index: 1000;
+                    pointer-events: none;
+                    font-family: Arial;
+                ">
+                    مرخص لـ: ${PROTECTION_CONFIG.customerName}<br>
+                    رقم الطلب: ${PROTECTION_CONFIG.orderNumber}
+                </div>
+                
+                <div style="
+                    position: fixed;
+                    bottom: 20px;
+                    right: 20px;
+                    background: rgba(0,0,0,0.03);
+                    padding: 6px 10px;
+                    border-radius: 6px;
+                    font-size: 10px;
+                    color: rgba(0,0,0,0.3);
+                    z-index: 1000;
+                    pointer-events: none;
+                    font-family: Arial;
+                ">
+                    ${PROTECTION_CONFIG.purchaseDate}
+                </div>
+            `;
+            document.body.appendChild(watermark);
+        }
+
+        // رسالة الوصول غير المصرح
+        function showUnauthorizedAccess() {
+            document.body.innerHTML = `
+                <div style="
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    min-height: 100vh;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    font-family: Arial;
+                    text-align: center;
+                    color: white;
+                ">
+                    <div style="
+                        background: rgba(255,255,255,0.1);
+                        padding: 40px;
+                        border-radius: 20px;
+                        backdrop-filter: blur(10px);
+                        max-width: 500px;
+                    ">
+                        <div style="font-size: 60px; margin-bottom: 20px;">🔒</div>
+                        <h1 style="font-size: 24px; margin-bottom: 15px;">وصول غير مصرح</h1>
+                        <p style="margin-bottom: 20px; line-height: 1.6;">
+                            هذا المحتوى مرخص حصرياً لـ:<br>
+                            <strong>${PROTECTION_CONFIG.customerName}</strong><br>
+                            رقم الطلب: ${PROTECTION_CONFIG.orderNumber}
+                        </p>
+                        <p style="font-size: 14px; opacity: 0.8;">
+                            للحصول على نسختك الخاصة، تواصل معنا
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // رسالة تجاوز حد الاستخدام
+        function showUsageLimitExceeded() {
+            document.body.innerHTML = `
+                <div style="
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    min-height: 100vh;
+                    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+                    font-family: Arial;
+                    text-align: center;
+                    color: white;
+                ">
+                    <div style="
+                        background: rgba(255,255,255,0.1);
+                        padding: 40px;
+                        border-radius: 20px;
+                        backdrop-filter: blur(10px);
+                        max-width: 500px;
+                    ">
+                        <div style="font-size: 60px; margin-bottom: 20px;">⏰</div>
+                        <h1 style="font-size: 24px; margin-bottom: 15px;">تم تجاوز حد الاستخدام</h1>
+                        <p style="margin-bottom: 20px; line-height: 1.6;">
+                            عزيزي ${PROTECTION_CONFIG.customerName}<br>
+                            لقد تم استخدام هذا المحتوى ${PROTECTION_CONFIG.maxUsage} مرة<br>
+                            وهو الحد الأقصى المسموح
+                        </p>
+                        <p style="font-size: 14px; opacity: 0.8;">
+                            للحصول على استخدام إضافي، تواصل معنا
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // رسالة انتهاء الصلاحية
+        function showExpiredContent() {
+            document.body.innerHTML = `
+                <div style="
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    min-height: 100vh;
+                    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+                    font-family: Arial;
+                    text-align: center;
+                    color: white;
+                ">
+                    <div style="
+                        background: rgba(255,255,255,0.1);
+                        padding: 40px;
+                        border-radius: 20px;
+                        backdrop-filter: blur(10px);
+                        max-width: 500px;
+                    ">
+                        <div style="font-size: 60px; margin-bottom: 20px;">📅</div>
+                        <h1 style="font-size: 24px; margin-bottom: 15px;">انتهت صلاحية المحتوى</h1>
+                        <p style="margin-bottom: 20px; line-height: 1.6;">
+                            عزيزي ${PROTECTION_CONFIG.customerName}<br>
+                            انتهت صلاحية هذا المحتوى<br>
+                            تاريخ الشراء: ${PROTECTION_CONFIG.purchaseDate}
+                        </p>
+                        <p style="font-size: 14px; opacity: 0.8;">
+                            لتجديد الاشتراك، تواصل معنا
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // تشغيل نظام الحماية عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!initProtection()) {
+                return; // إيقاف التحميل إذا فشلت الحماية
+            }
+        });
+
+        // منع النسخ والطباعة
+        document.addEventListener('keydown', function(e) {
+            // منع Ctrl+C, Ctrl+A, Ctrl+S, Ctrl+P, F12
+            if ((e.ctrlKey && (e.key === 'c' || e.key === 'a' || e.key === 's' || e.key === 'p')) || e.key === 'F12') {
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        // منع النقر بالزر الأيمن
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            return false;
+        });
+
+        // منع تحديد النص
+        document.addEventListener('selectstart', function(e) {
+            e.preventDefault();
+            return false;
+        });
+    </script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@300;400;600;700&display=swap');
+        
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            user-select: none; /* منع تحديد النص */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+        
+        .booklet-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .page {
+            padding: 40px;
+            min-height: 500px;
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        .page.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .cover {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+            text-align: center;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .cover h1 {
+            font-family: 'Amiri', serif;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .cover .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 2rem;
+        }
+        
+        .cover .age-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        .navigation {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            z-index: 100;
+        }
+        
+        .nav-btn {
+            background: rgba(255,255,255,0.9);
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .nav-btn:hover {
+            background: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .nav-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .section-title {
+            font-family: 'Amiri', serif;
+            font-size: 2rem;
+            color: #4a5568;
+            text-align: center;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+        
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, #ff9a9e, #fecfef);
+            border-radius: 2px;
+        }
+        
+        .milestone-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 25px rgba(240, 147, 251, 0.3);
+        }
+        
+        .milestone-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .milestone-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .milestone-list li {
+            padding: 8px 0;
+            padding-right: 20px;
+            position: relative;
+        }
+        
+        .milestone-list li::before {
+            content: '✨';
+            position: absolute;
+            right: 0;
+            top: 8px;
+        }
+        
+        .tip-box {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+        
+        .tip-box h4 {
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .activity-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .activity-card {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .activity-card:hover {
+            border-color: #ff9a9e;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        
+        .activity-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+        
+        .progress-bar {
+            background: #e2e8f0;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff9a9e, #fecfef);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        .page-indicator {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: rgba(255,255,255,0.9);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .page {
+                padding: 20px;
+            }
+            
+            .cover h1 {
+                font-size: 2rem;
+            }
+            
+            .activity-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .navigation {
+                bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="booklet-container">
+        <!-- مؤشر الصفحة -->
+        <div class="page-indicator">
+            صفحة <span id="currentPage">1</span> من <span id="totalPages">6</span>
+        </div>
+
+        <!-- الصفحة الأولى: الغلاف -->
+        <div class="page active cover">
+            <div class="text-6xl mb-6">👶🌸</div>
+            <h1>كتيب تالا الصغيرة</h1>
+            <p class="subtitle">دليل النمو والتطور من 6 إلى 12 شهر</p>
+            <div class="age-badge">
+                العمر الحالي: 6 أشهر
+            </div>
+        </div>
+
+        <!-- الصفحة الثانية: معالم الشهر السادس -->
+        <div class="page">
+            <h2 class="section-title">🎯 معالم الشهر السادس</h2>
+            
+            <div class="milestone-card">
+                <h3>🧠 التطور المعرفي</h3>
+                <ul class="milestone-list">
+                    <li>تبدأ في فهم كلمة "لا"</li>
+                    <li>تتفاعل مع اسمها عند مناداتها</li>
+                    <li>تظهر فضولاً كبيراً تجاه الأشياء</li>
+                    <li>تحب استكشاف الألعاب بفمها</li>
+                </ul>
+            </div>
+
+            <div class="milestone-card">
+                <h3>🤸‍♀️ التطور الحركي</h3>
+                <ul class="milestone-list">
+                    <li>تجلس بمساعدة أو بدعم خفيف</li>
+                    <li>تتدحرج من البطن إلى الظهر والعكس</li>
+                    <li>تنقل الأشياء من يد إلى أخرى</li>
+                    <li>تحاول الوصول للأشياء البعيدة</li>
+                </ul>
+            </div>
+
+            <div class="tip-box">
+                <h4>💡 نصيحة مهمة</h4>
+                <p>هذا هو الوقت المثالي لبدء إدخال الأطعمة الصلبة! ابدئي بالخضار المهروسة والفواكه الطرية.</p>
+            </div>
+        </div>
+
+        <!-- الصفحة الثالثة: الأنشطة المناسبة -->
+        <div class="page">
+            <h2 class="section-title">🎨 أنشطة تنموية مناسبة</h2>
+            
+            <div class="activity-grid">
+                <div class="activity-card">
+                    <div class="activity-icon">🎵</div>
+                    <h3>الموسيقى والغناء</h3>
+                    <p>غني لتالا أغاني الأطفال واتركيها تستمع لأصوات مختلفة</p>
+                </div>
+                
+                <div class="activity-card">
+                    <div class="activity-icon">📚</div>
+                    <h3>قراءة القصص</h3>
+                    <p>اقرئي لها قصصاً بصور ملونة وأصوات مختلفة</p>
+                </div>
+                
+                <div class="activity-card">
+                    <div class="activity-icon">🧸</div>
+                    <h3>اللعب التفاعلي</h3>
+                    <p>العبي معها لعبة "الغميضة" و"أين عائشة؟"</p>
+                </div>
+                
+                <div class="activity-card">
+                    <div class="activity-icon">🤲</div>
+                    <h3>تمارين الجلوس</h3>
+                    <p>ساعديها على الجلوس مع الدعم واللعب في هذا الوضع</p>
+                </div>
+            </div>
+
+            <div class="tip-box">
+                <h4>⭐ تذكري</h4>
+                <p>كل طفل ينمو بوتيرته الخاصة. لا تقلقي إذا لم تحقق تالا كل المعالم في نفس الوقت!</p>
+            </div>
+        </div>
+
+        <!-- الصفحة الرابعة: التغذية والنوم -->
+        <div class="page">
+            <h2 class="section-title">🍼 التغذية والنوم</h2>
+            
+            <div class="milestone-card">
+                <h3>🥄 التغذية في الشهر السادس</h3>
+                <ul class="milestone-list">
+                    <li>الرضاعة الطبيعية أو الصناعية كل 3-4 ساعات</li>
+                    <li>بدء إدخال الأطعمة الصلبة تدريجياً</li>
+                    <li>تجربة الخضار المهروسة (جزر، كوسا، بطاطا حلوة)</li>
+                    <li>الفواكه المهروسة (تفاح، موز، كمثرى)</li>
+                </ul>
+            </div>
+
+            <div class="milestone-card">
+                <h3>😴 أنماط النوم</h3>
+                <ul class="milestone-list">
+                    <li>النوم 12-15 ساعة في اليوم</li>
+                    <li>قيلولتان في النهار (صباحية ومسائية)</li>
+                    <li>النوم المتواصل ليلاً لفترات أطول</li>
+                    <li>روتين نوم ثابت مهم جداً</li>
+                </ul>
+            </div>
+
+            <div class="tip-box">
+                <h4>🌙 نصائح للنوم الهادئ</h4>
+                <p>أنشئي روتيناً مسائياً ثابتاً: حمام دافئ، قصة قصيرة، ثم النوم في نفس الوقت كل ليلة.</p>
+            </div>
+        </div>
+
+        <!-- الصفحة الخامسة: متابعة التطور -->
+        <div class="page">
+            <h2 class="section-title">📊 متابعة التطور</h2>
+            
+            <div class="milestone-card">
+                <h3>📏 النمو الجسدي المتوقع</h3>
+                <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 8px; margin: 15px 0;">
+                    <p><strong>الوزن:</strong> 6.5 - 8.5 كيلو</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 70%;"></div>
+                    </div>
+                    
+                    <p><strong>الطول:</strong> 63 - 68 سم</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 65%;"></div>
+                    </div>
+                    
+                    <p><strong>محيط الرأس:</strong> 42 - 44 سم</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 68%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="milestone-card">
+                <h3>🏥 المتابعة الطبية</h3>
+                <ul class="milestone-list">
+                    <li>زيارة طبيب الأطفال الشهرية</li>
+                    <li>متابعة التطعيمات حسب الجدول</li>
+                    <li>فحص السمع والبصر</li>
+                    <li>مراقبة النمو والتطور</li>
+                </ul>
+            </div>
+
+            <div class="tip-box">
+                <h4>⚠️ علامات تستدعي استشارة الطبيب</h4>
+                <p>إذا لم تتفاعل تالا مع الأصوات، أو لم تبتسم، أو لم تحاول الجلوس بمساعدة بحلول نهاية الشهر السادس.</p>
+            </div>
+        </div>
+
+        <!-- الصفحة السادسة: رسالة حب -->
+        <div class="page">
+            <div style="text-align: center; padding: 40px 20px;">
+                <div style="font-size: 4rem; margin-bottom: 30px;">💕👶💕</div>
+                
+                <h2 style="font-family: 'Amiri', serif; color: #4a5568; font-size: 2.2rem; margin-bottom: 30px;">
+                    رسالة حب لتالا الغالية
+                </h2>
+                
+                <div style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); color: white; padding: 30px; border-radius: 20px; margin: 20px 0; line-height: 1.8;">
+                    <p style="font-size: 1.1rem; margin-bottom: 20px;">
+                        تالا الحبيبة، أنت نور البيت وفرحة القلب 🌟
+                    </p>
+                    <p style="font-size: 1rem; margin-bottom: 20px;">
+                        كل يوم معك هو مغامرة جديدة مليئة بالحب والاكتشافات الرائعة. 
+                        ابتسامتك تضيء حياتنا، وضحكتك تملأ البيت بهجة وسعادة.
+                    </p>
+                    <p style="font-size: 1rem; margin-bottom: 20px;">
+                        نحن فخورون بكل إنجاز صغير تحققينه، من أول ابتسامة إلى أول كلمة ستقولينها قريباً.
+                    </p>
+                    <p style="font-size: 1.1rem; font-weight: 600;">
+                        أحبك إلى القمر والعودة يا قطعة من قلبي 💖
+                    </p>
+                </div>
+                
+                <div style="margin-top: 30px; font-size: 0.9rem; color: #666;">
+                    <p>مع كل الحب والدعوات،</p>
+                    <p style="font-weight: 600; color: #4a5568;">ماما وبابا 👨‍👩‍👧</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- أزرار التنقل -->
+    <div class="navigation">
+        <button class="nav-btn" id="prevBtn" onclick="changePage(-1)">⏮️ السابق</button>
+        <button class="nav-btn" id="nextBtn" onclick="changePage(1)">التالي ⏭️</button>
+    </div>
+
+    <script>
+        let currentPageIndex = 0;
+        const pages = document.querySelectorAll('.page');
+        const totalPages = pages.length;
+        
+        document.getElementById('totalPages').textContent = totalPages;
+        
+        function showPage(index) {
+            pages.forEach(page => page.classList.remove('active'));
+            pages[index].classList.add('active');
+            
+            document.getElementById('currentPage').textContent = index + 1;
+            
+            // تحديث أزرار التنقل
+            document.getElementById('prevBtn').disabled = index === 0;
+            document.getElementById('nextBtn').disabled = index === totalPages - 1;
+        }
+        
+        function changePage(direction) {
+            const newIndex = currentPageIndex + direction;
+            if (newIndex >= 0 && newIndex < totalPages) {
+                currentPageIndex = newIndex;
+                showPage(currentPageIndex);
+            }
+        }
+        
+        // تهيئة الصفحة الأولى
+        showPage(0);
+        
+        // التنقل بالكيبورد
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                changePage(-1);
+            } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                changePage(1);
+            }
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'969bc275a6ccf536',t:'MTc1NDI4NjQ0Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
